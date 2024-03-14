@@ -24,5 +24,22 @@ In short, the GraphQl API allows fine grained access to its resources, where the
 
 ## Getting Ready
 
+### Auth Token
+
 1. You need a GitHub account.
-2. In order to access the GraphQl API, you need to get an auth token from your GitHub Account. The API requires authentication.
+2. In order to access the GraphQl API, you need to get an auth token from your GitHub Account. The API requires authentication (The REST API does not). To get one, do the following:
+
+- login to your account
+- in the upper right corner, click on your profile picture
+- in the drop down list select "Settings"
+- on the Settings page, select "Developer Settings".
+- on the left menu, select "Personal Access Tokens"
+- select "Fine-grained tokens". (These allow more targeted permissions on the token)
+- generate a new token
+  - by default, new tokens allow only read-only access to the API. That's enough for this exercise.
+  - it may ask for your password or passkey to verify its you
+  - follow the instructions. Remember that once you generate the token, you need to copy it an store it somewhere (NOT IN A REPO). You won't be able to look at it again on the GitHub page.
+  - For this exercise, the code will look for an environment variable named "GITHUB_TOKEN".
+  - The token will look something like this "github_pat_blahblahblah..."
+
+### Clone The Repo
