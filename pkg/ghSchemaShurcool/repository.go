@@ -1,36 +1,13 @@
 package Shurcool
 
 import (
+	"context"
 	"fmt"
+	"os"
+
+	"github.com/shurcooL/graphql"
+	"golang.org/x/oauth2"
 )
-
-/*
-mutation createRepository($input: CreateRepositoryInput!) {
-  createRepository(input: $input) {
-    clientMutationId
-  }
-}
-Variables
-{
-  "input" : {
-    "name": "repository_name"
-  	"ownerId": "",
-	"description": "This is your first repository",
-    "visibility": "PUBLIC","PRIVATE","INTERNAL"
-	"template": false,
-	"homepageUrl": "https://github.com",
-	"hasWikiEnabled": false,
-	"hasIssuesEnabled": true,
-	"teamId": ""
-	}
-}
-
-type CreateRepository struct {
-	CreateRepository struct {
-			ClientMutationID string `graphql:"clientMutationId"`
-	} `graphql:"createRepository(input:{name:\"newrepo\" visibility:PUBLIC ownerId: \"ownerid\" description:\"This is your first repository\" template:false homepageUrl:\"https://github.com\" hasWikiEnabled:false hasIssuesEnabled:true teamId:\"teamid})"`
-} // @name CreateRepository
-*/
 
 type Repository struct {
 	Name string `graphql:"name"`
@@ -63,6 +40,55 @@ type RepositoryConnection struct {
 		PageInfo PageInfo `graphql:"pageInfo"`
 	} `graphql:"repositoryConnection(first: 10, after: $cursor)"`
 } // @name RepositoryConnection
+
+var repos struct {
+	Search struct {
+		Edges []struct {
+			Node struct {
+				SearchedRepository struct {
+					Name        string `graphql:"name"`
+					ID 	   		string `graphql:"id"`
+					StarGazers struct {
+						TotalCount int `graphql:"totalCount"`
+					} `graphql:"stargazers"`
+				} `graphql:"... on Repository"`
+			}
+		}
+	} `graphql:"search(query: $query, type:REPOSITORY, first: $first)"`
+}
+
+var variables = map[string]any{}
+
+//lint:ignore U1000 called by main
+func fetchRepos(owner string) ([]string, []string, []int, error) {
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+
+	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
+
+	// update the variables
+	variables["query"] = graphql.String(fmt.Sprintf("is:public archived:false org:%s", owner))
+	variables["first"] = graphql.Int(100)
+
+	// execute the query
+	err := client.Query(context.Background(), &repos, variables)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	var names []string
+	var stars []int
+	var ids []string
+	for _, edge := range repos.Search.Edges {
+		names = append(names, edge.Node.SearchedRepository.Name)
+		stars = append(stars, edge.Node.SearchedRepository.StarGazers.TotalCount)
+		ids = append(ids, edge.Node.SearchedRepository.ID)
+	}
+	return ids, names, stars, nil
+}
+
 
 func Run() {
 	fmt.Println("repository")
