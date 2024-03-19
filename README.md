@@ -14,33 +14,53 @@ From [Github REST API Docs](https://docs.github.com/en/rest) : "You can use GitH
 
 From [GitHub GraphQl API Docs](https://docs.github.com/en/graphql) : "To create integrations, retrieve data, and automate your workflows, use the GitHub GraphQL API. The GitHub GraphQL API offers more precise and flexible queries than the GitHub REST API."
 
+### Differences
+
+[REST vs GraphQL](https://aws.amazon.com/compare/the-difference-between-graphql-and-rest/)
+
+"Under REST architecture, data is returned to the client from the server in the whole-of-resource structure specified by the server."
+
+"A data format describes how you would like the server to return the data, including objects and fields that match the server-side schema"
+
+On other words, GraphQL servers and client can mix data from multiple resources, where REST sends a single 'document'.
+
 ### Which One To Use
 
 Get the scoop from the source:
 
 [Comparing GitHub's REST API and GraphQL API](https://docs.github.com/en/rest/about-the-rest-api/comparing-githubs-rest-api-and-graphql-api)
 
-In short, the GraphQl API allows fine grained access to its resources, where the REST API is less flexible and may give you more information than you might want. That's basically the difference between REST and GraphQl.
+In short, the GraphQl API allows fine grained access to its resources, where the REST API is less flexible and may give you more information than you might want. That's basically the difference between REST and GraphQl. HOWEVER, the easiest option to query the GraphQL API doesn't provide that level of granuarity. More on that below.
 
-## The Application
+## Three ways to query the GraphQL API
 
-The code of this app builds a command line utility that lets you query for information about any public github repo. It does the access using your account based on the GITHUB_TOKEN environment variable.
+Unlike the REST API, all access to the GitHub GraphQL API require authentication. Examples of that will be in the code.
 
-At the low level, querying a GraphQl API server requires sending a POST request to the server with a payload containing the proper GraphQl language. The response from a valid request will return a payload that has the requested data in JSON format. Or an error message.
+1. Raw POST Requests
 
-Its possible to handcraft the POST request payload, but it is a bit tricky to get everything right. So most (all?) users will use a GraphQl Client package to simplify the process.
+At the low level, a client queries a GraphQL API using an HTTP POST request. The payload is a GraphQL formatted structure that specifies what you want to get. This is dooable, but can be kind of klunky and hard coded. Its possible to handcraft the POST request payload, but it is a bit tricky to get everything right. So most (all?) users will use a GraphQl Client package to simplify the process.There is an example below.
 
-You can go to [Go Clients](https://graphql.org/code/#go) at the main GraphQL site. Scroll down to the client section. There are a couple of client packages that have at least 1K stars. I selected shurcool/graphql for this project. It worked pretty seemlessly.
+2. Google go-github
 
-## GitHub GraphQL API
+Google has created a Go package that supports accessing the GitHub GraphQL API, called [go-github](https://github.com/google/go-github). This is the easiest way to get at the GraphQL API, because it takes care of all the underlying GraphQL magic. It provides types and methods that correspond to the REST API.
 
-The GitHub GraphQL API schema is massive, a bit over 1MB in size. [You can download the schema](https://docs.github.com/en/graphql/overview/public-schema). But, the schema is sort of opaque to someone (like me) who isn't a GraphQL or Github API expert. You can grep it to find what you are looking for. A simpler way can be to use the [BitHb GraphQL Explorer](https://docs.github.com/en/graphql/overview/public-schema). Pretty easy to search, even if you only have a vague idea of what you are looking for. And it then gives you a definition of the type layout you need to set up.
+This is the easiest way to go (pun), but the drawback is that is works like the REST API, return whole documents rather than more fine grained requests that GraphQL is about.
+
+3. A GraphQL client
+
+For more fine grained access but with easier code, you can use a full client package. [Here's a list of libraries for Go](https://graphql.org/code/#go). Scroll down for clients. There are a couple of clients that have at least 1K GitHub stars. I chose [shurcooL/graphql](https://github.com/shurcooL/graphql), pretty easy to use, sort of.
+
+With a direct client, there is more work setting up types to match the requests. But it allows full up GraphQL queries that can drill down to exactly what you want.
+
+## GitHub GraphQL API Schema
+
+Figuring out what you want to do is a bit daunting. The GitHub GraphQL API schema is massive, a bit over 1MB in size. [You can download the schema](https://docs.github.com/en/graphql/overview/public-schema). But, the schema is sort of opaque to someone (like me) who isn't a GraphQL or Github API expert. You can grep it to find what you are looking for. A simpler way can be to use the [BitHb GraphQL Explorer](https://docs.github.com/en/graphql/overview/public-schema). Pretty easy to search, even if you only have a vague idea of what you are looking for. And it then gives you a definition of the type layout you need to set up.
 
 In this case I first searched the schema for 'repositories' and found quite a few hits. It wasn't clear to me what to use. I went to the Explorer and it was much more friendly. It took me a bit of flailing but I found the 'search' query which is what you want to find specific things. "Perform a search across resources, returning a maximum of 1,000 results". In this case I wanted a list of public repositories from any owner.
 
-The query looks like this, with the variable 'queryString'. 'org' is the name of the account owner you want to search. In this case I only wanted the repo names from the type 'Repository'. That type has a bunch of data you can add to it. Go into the explorer, search 'Docs' and look for 'Repository', no prefix or suffix. That gives you the entire type definition.
+The query looks like this, with the variable 'queryString'. 'org' is the name of the account owner you want to search. In this case I only wanted the repo names from the type 'Repository'. That type has a bunch of data you can add to it. Go into the explorer, search 'Docs' and look for 'Repository', no prefix or suffix. That gives you the entire type definition. In most cases you will use that type definition to create or use a corresponding Go struct type.
 
-With this query I was able to get a list for any owner account. Substitute whichever owner in place of 'octocat' in the queryString. Add any of the fields defined in the Repository type. If you have a GitHub account, go to the Explorer and try this out.
+With this query I was able to get a list for any owner account. Substitute whichever owner in place of 'octocat' in the queryString. Add any of the fields defined in the Repository type. If you have a GitHub account, login and go to the Explorer and try this out.
 
 ```graphql
 query ($queryString: String!) {
@@ -62,24 +82,31 @@ query ($queryString: String!) {
 
 ```
 
+## The Example Application
+
+The code of this example app builds a command line utility that lets you query for information about any public github repo. The app has examples of the three types of access that fetches a list of repositories for a specified org/user.
+
+The app is called 'gh-repo', with 3 subcommands : raw,go-github,shurcool and one argument 'user'.
+
+- $gh-schema raw [user]
+- $gh-schema go-github [user]
+- $gh-schema shurcool [user]
+
+It does the access using your account based on the GITHUB_TOKEN environment variable. The app has code that does the authentication.
+
 ## The Code
 
 Important! I use GitHub Copilot with VS Code. Without Copilot, it would have taken me 10 times longer to figure out exactly what to do. I use Copilot all the time but this case really made it worth the $10 a month. Not surprisingly, Copilot knows about the GraphQL types and really filled in a lot of the type information.
 
-If you are familiar with marshall/unmarshall JSON types, the GraphQL types work similarly. You define a type, usually a struct, and annotate it's members with a 'graphql' tag. That tells Go how to map from the JSON data to Go types. ike this:
+### RAW
 
-```go
+### Go-GitHub
 
-var q struct {
-	Human struct {
-		Name   graphql.String
-		Height graphql.Float  `graphql:"height(unit: METER)"`
-	} `graphql:"human(id: \"1000\")"`
-}
-
-```
+### ShurcooL
 
 Note: The shurcooL package provides 'graphql' types including String, Float ID, Int and Int32. However in the source comments and issues it says that the graphql types are not need. I had no problem using string, int, float directly.
+
+Note that shurcooL has an uppercase L on the end.
 
 ### Define the query type
 
