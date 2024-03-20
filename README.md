@@ -22,7 +22,7 @@ From [GitHub GraphQl API Docs](https://docs.github.com/en/graphql) : "To create 
 
 "A data format describes how you would like the server to return the data, including objects and fields that match the server-side schema"
 
-On other words, GraphQL servers and client can mix data from multiple resources, where REST sends a single 'document'.
+On other words, GraphQL servers and client can mix data from multiple resources and specify just what is needed, where REST sends a single 'document'.
 
 ### Which One To Use
 
@@ -77,7 +77,7 @@ query ($queryString: String!) {
 }
 
 {
-"queryString": "is:public archived:false org:octocat"
+"queryString": "owner:octocat"
 }
 
 ```
@@ -94,36 +94,37 @@ The app is called 'gh-repo', with 3 subcommands : raw,go-github,shurcool and one
 
 It does the access using your account based on the GITHUB_TOKEN environment variable. The app has code that does the authentication.
 
+The API used in the example code is the top level "query search" which can be used to search for several different GitHub objects. In this case a search of repositories for a specified owner is performed. You can find it's definition in the GraphQL Explorer. Open the Schema Docs (file icon in upper left of the dialog), click on "Query", then scroll down to "search", or use hourglass to find "search".
+
+There are other ways to list particular things that give a similar result. You can use the GraphQL Explorer or go into the google/go-github reference docs and look for matching types such as "RepositoriesService".
+
 ## The Code
 
 Important! I use GitHub Copilot with VS Code. Without Copilot, it would have taken me 10 times longer to figure out exactly what to do. I use Copilot all the time but this case really made it worth the $10 a month. Not surprisingly, Copilot knows about the GraphQL types and really filled in a lot of the type information.
 
+Each of the approaches: raw,go-github and shurcool perform the repo search and return the repo name,ID and stars count.
+
+All access requires an authenticated client one way or another. The example code has the auth code, and expects the environment variable GITHUB_TOKEN.
+
 ### RAW
+
+See pkg/raw/raw.go.
+
+This approach cobbles up a POST request in GraphQL language, sends it to the API and gets a JSON result back. To unmarshall the JSON, a type must be set up that matches the return format. The code defines a type named repoData that mirrors the JSON structure and has the appropriate annotations.
 
 ### Go-GitHub
 
+See pkg/goog/goog.go
+
+This approach is easiest. Just look up the desired type and methods in the go-github docs and code it up.
+
 ### ShurcooL
 
-Note: The shurcooL package provides 'graphql' types including String, Float ID, Int and Int32. However in the source comments and issues it says that the graphql types are not need. I had no problem using string, int, float directly.
+See plg/ghshurcool/ghshurcool.go.
 
-Note that shurcooL has an uppercase L on the end.
+This approach is in the middle between raw and go-github. It does require defining the query-search types. On the other hand it allows fine grained access that the go-github API doesn't allow.
 
-### Define the query type
-
-### Define the result type(s)
-
-### Execute the query
-
-Now that we know what the query needs to look like, it needs to be translated to Go code. Using the shurcooL/graphql client, I was able to piece together the code to execute the query. The process looks something like this:
-
-- Import "github.com/shurcooL/graphql" and "golang.org/x/oauth2"
-- Get an authenticated http client with GITHUB_TOKEN, using OAuth.
-- Create a graphql client and give it the http client
-- Set up variables
-- Execute the query
-- Extract and return the requested data.
-
-### Executing the Query
+Note: The shurcooL/graphql package provides 'graphql' types including String, Float ID, Int and Int32. However in the source comments and issues it says that the graphql types are not need. I had no problem using string, int, float directly.
 
 ## Setup And Run
 
@@ -160,5 +161,13 @@ If you haven't already.
 ### Run It
 
 - printenv | grep GITHUB_TOKEN (just checking)
-- $cd cmd
-- $go run .
+
+- $cd into the repo (top level)
+- $go run . raw [owner name]
+- $go run . goog [owner name]
+- $go run . shurcool [owner name]
+
+OR
+
+- $cd into the repo (top level)
+- $source test.sh (runs all three against the 'octocat' owner)
