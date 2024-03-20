@@ -120,7 +120,7 @@ This approach is easiest. Just look up the desired type and methods in the go-gi
 
 ### ShurcooL
 
-See plg/ghshurcool/ghshurcool.go.
+See pkg/ghshurcool/ghshurcool.go.
 
 This approach is in the middle between raw and go-github. It does require defining the query-search types. On the other hand it allows fine grained access that the go-github API doesn't allow.
 
