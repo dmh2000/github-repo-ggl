@@ -1,4 +1,4 @@
-# Find Out Everything About A GitHub Repo With The GitHub GraphQl API (With Golang)
+# Find Out Everything About A GitHub Repo With The GitHub GraphQl API And Go
 
 ## Introduction
 
@@ -42,13 +42,13 @@ At the low level, a client queries a GraphQL API using an HTTP POST request. The
 
 2. Google go-github
 
-Google has created a Go package that supports accessing the GitHub GraphQL API, called [go-github](https://github.com/google/go-github). This is the easiest way to get at the GraphQL API, because it takes care of all the underlying GraphQL magic. It provides types and methods that correspond to the REST API.
+Google has created a Go package that supports accessing the GitHub GraphQL API, at [google/go-github](https://github.com/google/go-github). This is the easiest way to get at the GraphQL API, because it takes care of all the underlying GraphQL magic. It provides types and methods that correspond to the REST API.
 
-This is the easiest way to go (pun), but the drawback is that is works like the REST API, return whole documents rather than more fine grained requests that GraphQL is about.
+This is the easiest way to go (pun), but the drawback is that is works like the REST API, returns whole documents rather than more fine grained requests that GraphQL is about.
 
 3. A GraphQL client
 
-For more fine grained access but with easier code, you can use a full client package. [Here's a list of libraries for Go](https://graphql.org/code/#go). Scroll down for clients. There are a couple of clients that have at least 1K GitHub stars. I chose [shurcooL/graphql](https://github.com/shurcooL/graphql), pretty easy to use, sort of.
+For more fine grained access but with easier code than a raw POST, you can use a full client package. [Here's a list of libraries for Go](https://graphql.org/code/#go). Scroll down for clients. There are a couple of clients that have at least 1K GitHub stars. I chose [shurcooL/graphql](https://github.com/shurcooL/graphql), pretty easy to use, sort of.
 
 With a direct client, there is more work setting up types to match the requests. But it allows full up GraphQL queries that can drill down to exactly what you want.
 
