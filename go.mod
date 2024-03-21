@@ -1,6 +1,6 @@
 module sqirvy.xyz/gh-repo
 
-go 1.21.0
+go 1.18
 
 require (
 	github.com/google/go-github/v60 v60.0.0
