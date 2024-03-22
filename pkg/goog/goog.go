@@ -23,9 +23,14 @@ func FetchRepos(owner string) ([]string, []string, []int, error) {
 
 	repos := result.Repositories
 
-	// uncomment this line to see the size of the returned data
-	// fmt.Println(repos)
-
+	// uncomment these lines to see the size of the returned data
+	// buf := bytes.Buffer{}
+	// enc := gob.NewEncoder(&buf)
+	// err = enc.Encode(repos)
+	// if err != nil {
+	// 	return nil, nil, nil, err
+	// }
+	// fmt.Printf("Size of go-github: %d\n", buf.Len())
 
 	var names []string
 	var stars []int
